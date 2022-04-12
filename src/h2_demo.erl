@@ -33,17 +33,44 @@ start() ->
     Dispatch =
         cowboy_router:compile([{'_',
                                 [{"/push/", h2_demo_handler_push, []},
+                                 {"/3/device/:device_id",h2_demo_apns_handler,[]},
                                  {"/:id/", h2_demo_handler, []},
                                  {"/static/[...]",
                                   cowboy_static,
                                   {dir, "priv/", [{mimetypes, cow_mimetypes, all}]}}]}]),
     {ok, _} =
-        cowboy:start_clear(h2_demo_server, [{port, 8080}], #{env => #{dispatch => Dispatch}}),
+        cowboy:start_clear(h2_demo_server, [{port, 8443}], #{env => #{dispatch => Dispatch}}),
+   start_tls(Dispatch),
     run(),
     ok.
 
+start_tls(Dispatch) ->
+  {ok, _} = cowboy:start_tls(h2_demo_server_tls,
+    [
+      {port, 443},
+      {cacertfile, "priv/ca-chain.cert.pem"},
+      {certfile, "priv/www.example.com.cert.pem"},
+      {keyfile, "priv/www.example.com.key.pem"},
+      {password,"123456"},
+%%        {log_level, debug},
+%%      {verify, verify_peer},
+      {reuseaddr, true},
+      {versions, ['tlsv1.2','tlsv1.3']},
+      {session_tickets, stateless}
+    ],
+    #{env => #{dispatch => Dispatch}}
+  ).
+
 run() ->
-    {ok, Pid} = gun:open("127.0.0.1", 8080, #{protocols => [http2]}),
+    {ok, Pid} = gun:open("www.example.com", 443, #{protocols => [http2],
+      transport => ssl,
+      transport_opts => [
+      {certfile, "priv/www.example.com.usr.cert.pem"},
+      {keyfile, "priv/www.example.com.usr.key.pem"},
+      {password, "123456"},
+      {versions, ['tlsv1.2', 'tlsv1.3']},
+      {session_tickets, auto}
+        ]}),
     persistent_term:put(h2_demo, {Pid, erlang:monitor(process, Pid)}).
 
 run(ID) ->

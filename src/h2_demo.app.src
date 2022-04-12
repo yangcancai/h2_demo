@@ -4,7 +4,7 @@
   {vsn, "0.1.0"},
   {registered, []},
   {mod, {h2_demo_app, []}},
-  {applications, [kernel, stdlib, cowboy, jsx, gun]},
+  {applications, [kernel, stdlib, cowboy, jsx, gun, cool_tools]},
   {env, []},
   {modules, []},
   {licenses, ["Apache 2.0"]},

@@ -26,7 +26,7 @@
 -author("yangcancai").
 
 -behaviour(gen_server).
-
+-include_lib("cool_tools/include/cool_tools_logger.hrl").
 %% API
 -export([start_link/0, post/3, gun/1]).
 %% gen_server callbacks
@@ -99,16 +99,17 @@ handle_info({gun, Fun}, State) when is_function(Fun) ->
 handle_info({post, Path, Headers, Data}, State) ->
     Ref = h2_demo:request(Path, Headers, Data),
     {noreply, State#{Ref => {Path, Headers, Data}}};
-handle_info({gun_up, _ConnPid, _Http2}, State) ->
+handle_info({gun_up, ConnPid, _Http2}, State) ->
+    ?LOG_DEBUG("gun_up ~p~n", [ConnPid]),
     {noreply, State};
 handle_info({gun_push, ConnPid, StreamRef, PushedStreamRef, Method, Host, Headers},
             State) ->
-    io:format("gun_push ~p~n",
+    ?LOG_DEBUG("gun_push ~p~n",
               [{gun_push, ConnPid, StreamRef, PushedStreamRef, Method, Host, Headers}]),
     {noreply, State#{PushedStreamRef => <<>>}};
 handle_info({gun_response, _ConnPid, StreamRef, fin, Status, Headers}, State) ->
     no_data,
-    io:format("gun_response no_data: req=~p, resp=~p~n",
+    ?LOG_DEBUG("gun_response no_data: req=~p, resp=~p~n",
               [maps:get(StreamRef, State), {Status, Headers}]),
     {noreply, maps:remove(StreamRef, State)};
 handle_info({gun_response, _ConnPid, StreamRef, nofin, Status, Headers}, State) ->
@@ -120,15 +121,15 @@ handle_info({gun_data, _ConnPid, StreamRef, fin, Data}, State) ->
     Old = maps:get({StreamRef, gun_data}, State, <<>>),
     Headers = maps:get({StreamRef, headers}, State),
     AllData = <<Old/binary, Data/binary>>,
-    io:format("gun_response data: req=~p, resp=~p~n",
+    ?LOG_DEBUG("gun_response data: req=~p, resp=~p~n",
               [maps:get(StreamRef, State), {Headers, AllData}]),
     S1 = maps:remove({StreamRef, gun_data}, State),
     {noreply, maps:remove(StreamRef, S1)};
 handle_info({'DOWN', _MRef, process, _ConnPid, _Reason}, State) ->
-    error_logger:error_msg("Oops!"),
+    ?LOG_ERROR("Oops!"),
     {stop, normal, State};
 handle_info(Info, State = #h2_demo_client_state{}) ->
-    error_logger:error_msg("unknown info: ~", Info),
+    ?LOG_WARNING("unknown info: ~p", Info),
     {noreply, State}.
 
 -spec terminate(Reason :: normal | shutdown | {shutdown, term()} | term(),

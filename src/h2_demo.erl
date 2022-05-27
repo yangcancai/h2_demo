@@ -48,9 +48,9 @@ start_tls(Dispatch) ->
   {ok, _} = cowboy:start_tls(h2_demo_server_tls,
     [
       {port, 443},
-      {cacertfile, "priv/ca-chain.cert.pem"},
-      {certfile, "priv/www.example.com.cert.pem"},
-      {keyfile, "priv/www.example.com.key.pem"},
+      {cacertfile, "priv/cacert.pem"},
+      {certfile, "priv/cert.pem"},
+      {keyfile, "priv/key.pem"},
       {password,"123456"},
 %%        {log_level, debug},
 %%      {verify, verify_peer},

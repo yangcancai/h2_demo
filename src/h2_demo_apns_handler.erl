@@ -35,7 +35,8 @@ init(Req0, State) ->
   N = rand:uniform(10),
   case N of
     _ when N < 3->
-      timer:sleep(1000);
+      ok;
+      %%timer:sleep(150);
     _->
       ignore
   end,
